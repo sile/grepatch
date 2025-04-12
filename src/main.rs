@@ -1,7 +1,6 @@
 use std::{
-    collections::HashMap,
     fs::File,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader, Seek, SeekFrom},
     num::NonZeroUsize,
     path::{Path, PathBuf},
 };
@@ -56,7 +55,7 @@ fn run() -> orfail::Result<()> {
 struct FilePatcher {
     path: PathBuf,
     file: File,
-    index: HashMap<NonZeroUsize, usize>,
+    line_positions: Vec<u64>,
 }
 
 impl FilePatcher {
@@ -66,14 +65,13 @@ impl FilePatcher {
         let mut this = Self {
             path: path.to_path_buf(),
             file,
-            index: HashMap::new(),
+            line_positions: Vec::new(),
         };
         this.build_index().or_fail()?;
         Ok(this)
     }
 
     fn build_index(&mut self) -> orfail::Result<()> {
-        let mut i = 0;
         let mut position = 0;
         let mut reader = BufReader::new(&mut self.file);
         let mut buf = String::new();
@@ -83,16 +81,25 @@ impl FilePatcher {
                 break;
             }
 
-            self.index
-                .insert(NonZeroUsize::MIN.saturating_add(i), position);
-            i += 1;
-            position += bytes_read;
+            self.line_positions.push(position);
+            position += bytes_read as u64;
             buf.clear();
         }
         Ok(())
     }
 
     fn apply(&mut self, patch: &LinePatch) -> orfail::Result<()> {
+        let position = *self
+            .line_positions
+            .get(patch.line_number.get() - 1)
+            .or_fail_with(|_| {
+                format!(
+                    "too large line number: file={}, number={}",
+                    patch.file_path.display(),
+                    patch.line_number
+                )
+            })?;
+        self.file.seek(SeekFrom::Start(position)).or_fail()?;
         todo!()
     }
 }
