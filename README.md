@@ -8,9 +8,9 @@ Try it!: `$ git grep -n $QUERY | grepatch --edit`
 Features
 ---------
 
-- Process output from `git grep` or similar tools
-- Apply text substitutions to multiple files in one operation
-- Selectively modify specific lines in files
+- **Process grep output**: Works seamlessly with output from `git grep -n` and similar tools
+- **Batch editing**: Apply text changes to multiple files in a single operation
+- **Interactive editing**: Use your preferred text editor to manually review and modify changes before applying them
 
 Installation
 ------------
