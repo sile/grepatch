@@ -25,15 +25,15 @@ fn main() -> noargs::Result<()> {
         .doc("Edit the input patch before applying it to allow manual modifications")
         .take(&mut args)
         .is_present();
-    let editor: PathBuf = if edit || args.metadata().help_mode {
-        noargs::opt("editor")
+    let editor: PathBuf = {
+        let mut opt = noargs::opt("editor")
             .ty("PATH")
             .env("EDITOR")
-            .doc("Specify which editor to use when '--edit' is enabled")
-            .take(&mut args)
-            .then(|a| a.value().parse())?
-    } else {
-        PathBuf::from("not_used")
+            .doc("Specify which editor to use when '--edit' is enabled");
+        if !edit {
+            opt = opt.default("dummy");
+        }
+        opt.take(&mut args).then(|a| a.value().parse())?
     };
 
     if let Some(help) = args.finish()? {
