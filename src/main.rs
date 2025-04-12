@@ -58,6 +58,7 @@ fn run() -> orfail::Result<()> {
 struct FilePatcher {
     path: PathBuf,
     lines: Vec<String>,
+    applied_count: usize,
 }
 
 impl FilePatcher {
@@ -65,6 +66,7 @@ impl FilePatcher {
         let mut this = Self {
             path: path.to_path_buf(),
             lines: Vec::new(),
+            applied_count: 0,
         };
         this.read_lines().or_fail()?;
         Ok(this)
@@ -98,6 +100,7 @@ impl FilePatcher {
             })?;
         let newlines = &line[line.trim_end_matches(['\r', '\n']).len()..];
         *line = format!("{}{newlines}", patch.content.trim_end_matches(['\r', '\n']));
+        self.applied_count += 1;
         Ok(())
     }
 
@@ -105,6 +108,11 @@ impl FilePatcher {
         let content = self.lines.join("");
         std::fs::write(&self.path, content)
             .or_fail_with(|e| format!("failed to write file {}: {e}", self.path.display()))?;
+        println!(
+            "{}: Applied {} line patches",
+            self.path.display(),
+            self.applied_count,
+        );
         Ok(())
     }
 }
