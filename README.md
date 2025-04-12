@@ -22,60 +22,47 @@ $ cargo install grepatch
 Examples
 --------
 
+Change repository name.
+
 ```console
-$ git grep -n LinePatch src/
-src/main.rs:40:    let patch = LinePatch::new(&first_line).or_fail()?;
-src/main.rs:45:        let patch = LinePatch::new(&line).or_fail()?;
-src/main.rs:90:    fn apply(&mut self, patch: &LinePatch) -> orfail::Result<()> {
-src/main.rs:126:struct LinePatch<'a> {
-src/main.rs:132:impl<'a> LinePatch<'a> {
+// TODO: comment
+$ git clone https://github.com/sile/grepatch
+$ cd grepatch/
 
-$ git grep -n LinePatch src/ | sed s/Patch/Diff/g | grepatch
-src/main.rs: Applied 5 line patches
+// TODO: comment
+$ git grep -n FilePatcher
+src/main.rs:41:    let mut patcher = FilePatcher::open(patch.file_path).or_fail()?;
+src/main.rs:48:            patcher = FilePatcher::open(patch.file_path).or_fail()?;
+src/main.rs:58:struct FilePatcher {
+src/main.rs:64:impl FilePatcher {
 
-$ git diff
+// TODO: comment
+$ git grep -n FilePatcher | sed s/Patch/Diff/g
+src/main.rs:41:    let mut patcher = FileDiffer::open(patch.file_path).or_fail()?;
+src/main.rs:48:            patcher = FileDiffer::open(patch.file_path).or_fail()?;
+src/main.rs:58:struct FileDiffer {
+src/main.rs:64:impl FileDiffer {
+
+// TODO: comment
+$ git grep -n FilePatcher | sed s/Patch/Diff/g | grepatch
+src/main.rs: Applied 4 line patches
+
+// TODO: comment
+$ git diff -U0
 diff --git a/src/main.rs b/src/main.rs
-index bad880a..6b1efdd 100644
+index bad880a..2133718 100644
 --- a/src/main.rs
 +++ b/src/main.rs
-@@ -37,12 +37,12 @@ fn run() -> orfail::Result<()> {
-         return Ok(());
-     };
- 
--    let patch = LinePatch::new(&first_line).or_fail()?;
-+    let patch = LineDiff::new(&first_line).or_fail()?;
-     let mut patcher = FilePatcher::open(patch.file_path).or_fail()?;
- 
-     for line in std::iter::once(Ok(first_line)).chain(lines) {
-         let line = line.or_fail()?;
--        let patch = LinePatch::new(&line).or_fail()?;
-+        let patch = LineDiff::new(&line).or_fail()?;
-         if patcher.path != patch.file_path {
-             patcher.finish().or_fail()?;
-             patcher = FilePatcher::open(patch.file_path).or_fail()?;
-@@ -87,7 +87,7 @@ impl FilePatcher {
-         Ok(())
-     }
- 
--    fn apply(&mut self, patch: &LinePatch) -> orfail::Result<()> {
-+    fn apply(&mut self, patch: &LineDiff) -> orfail::Result<()> {
-         let line = self
-             .lines
-             .get_mut(patch.line_number.get() - 1)
-@@ -123,13 +123,13 @@ impl FilePatcher {
- 
- // [FORMAT] FILE_PATH:LINE_NUMBER:NEW_LINE_CONTENT
- #[derive(Debug)]
--struct LinePatch<'a> {
-+struct LineDiff<'a> {
-     file_path: &'a Path,
-     line_number: NonZeroUsize,
-     content: &'a str,
- }
- 
--impl<'a> LinePatch<'a> {
-+impl<'a> LineDiff<'a> {
-     pub fn new(line: &'a str) -> orfail::Result<Self> {
-         let (file_path, line) = line
-             .split_once(':')
+@@ -41 +41 @@ fn run() -> orfail::Result<()> {
+-    let mut patcher = FilePatcher::open(patch.file_path).or_fail()?;
++    let mut patcher = FileDiffer::open(patch.file_path).or_fail()?;
+@@ -48 +48 @@ fn run() -> orfail::Result<()> {
+-            patcher = FilePatcher::open(patch.file_path).or_fail()?;
++            patcher = FileDiffer::open(patch.file_path).or_fail()?;
+@@ -58 +58 @@ fn run() -> orfail::Result<()> {
+-struct FilePatcher {
++struct FileDiffer {
+@@ -64 +64 @@ struct FilePatcher {
+-impl FilePatcher {
++impl FileDiffer {
 ```
