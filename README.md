@@ -1,6 +1,11 @@
 grepatch
 ========
 
+[![grepatch](https://img.shields.io/crates/v/grepatch.svg)](https://crates.io/crates/grepatch)
+[![Actions Status](https://github.com/sile/grepatch/workflows/CI/badge.svg)](https://github.com/sile/grepatch/actions)
+![License](https://img.shields.io/crates/l/grepatch)
+
+
 `grepatch` is a global text replacement tool that processes output from `git grep -n` and applies changes from command line operations like `sed` or manual edits via text editors to modify files directly.
 
 Try it!: `$ git grep -n $QUERY | grepatch --edit`
