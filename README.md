@@ -22,32 +22,31 @@ $ cargo install grepatch
 Examples
 --------
 
-Change repository name.
+Rename the `FilePatcher` struct to `DiffPatcher` throughout this repository.
 
 ```console
-// TODO: comment
 $ git clone https://github.com/sile/grepatch
 $ cd grepatch/
 
-// TODO: comment
+// Show all occurrences of FilePatcher
 $ git grep -n FilePatcher
 src/main.rs:41:    let mut patcher = FilePatcher::open(patch.file_path).or_fail()?;
 src/main.rs:48:            patcher = FilePatcher::open(patch.file_path).or_fail()?;
 src/main.rs:58:struct FilePatcher {
 src/main.rs:64:impl FilePatcher {
 
-// TODO: comment
+// Replace "Patch" with "Diff" in all occurrences (dry-run)
 $ git grep -n FilePatcher | sed s/Patch/Diff/g
 src/main.rs:41:    let mut patcher = FileDiffer::open(patch.file_path).or_fail()?;
 src/main.rs:48:            patcher = FileDiffer::open(patch.file_path).or_fail()?;
 src/main.rs:58:struct FileDiffer {
 src/main.rs:64:impl FileDiffer {
 
-// TODO: comment
+// Apply the changes to the files
 $ git grep -n FilePatcher | sed s/Patch/Diff/g | grepatch
 src/main.rs: Applied 4 line patches
 
-// TODO: comment
+// Show the changes we made
 $ git diff -U0
 diff --git a/src/main.rs b/src/main.rs
 index bad880a..2133718 100644
