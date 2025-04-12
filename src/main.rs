@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{BufRead, BufReader, Seek, SeekFrom},
+    io::{BufRead, BufReader},
     num::NonZeroUsize,
     path::{Path, PathBuf},
 };
@@ -44,54 +44,51 @@ fn run() -> orfail::Result<()> {
         let line = line.or_fail()?;
         let patch = LinePatch::new(&line).or_fail()?;
         if patcher.path != patch.file_path {
+            patcher.finish().or_fail()?;
             patcher = FilePatcher::open(patch.file_path).or_fail()?;
         }
         patcher.apply(&patch).or_fail()?;
     }
+    patcher.finish().or_fail()?;
+
     Ok(())
 }
 
 #[derive(Debug)]
 struct FilePatcher {
     path: PathBuf,
-    file: File,
-    line_positions: Vec<u64>,
+    lines: Vec<String>,
 }
 
 impl FilePatcher {
     fn open(path: &Path) -> orfail::Result<Self> {
-        let file = File::open(path)
-            .or_fail_with(|e| format!("failed to open file {}: {e}", path.display()))?;
         let mut this = Self {
             path: path.to_path_buf(),
-            file,
-            line_positions: Vec::new(),
+            lines: Vec::new(),
         };
-        this.build_index().or_fail()?;
+        this.read_lines().or_fail()?;
         Ok(this)
     }
 
-    fn build_index(&mut self) -> orfail::Result<()> {
-        let mut position = 0;
-        let mut reader = BufReader::new(&mut self.file);
-        let mut buf = String::new();
+    fn read_lines(&mut self) -> orfail::Result<()> {
+        let file = File::open(&self.path)
+            .or_fail_with(|e| format!("failed to open file {}: {e}", self.path.display()))?;
+        let mut reader = BufReader::new(file);
         loop {
-            let bytes_read = reader.read_line(&mut buf).or_fail()?;
+            let mut line = String::new();
+            let bytes_read = reader.read_line(&mut line).or_fail()?;
             if bytes_read == 0 {
                 break;
             }
-
-            self.line_positions.push(position);
-            position += bytes_read as u64;
-            buf.clear();
+            self.lines.push(line);
         }
         Ok(())
     }
 
     fn apply(&mut self, patch: &LinePatch) -> orfail::Result<()> {
-        let position = *self
-            .line_positions
-            .get(patch.line_number.get() - 1)
+        let line = self
+            .lines
+            .get_mut(patch.line_number.get() - 1)
             .or_fail_with(|_| {
                 format!(
                     "too large line number: file={}, number={}",
@@ -99,8 +96,16 @@ impl FilePatcher {
                     patch.line_number
                 )
             })?;
-        self.file.seek(SeekFrom::Start(position)).or_fail()?;
-        todo!()
+        let newlines = &line[line.trim_end_matches(['\r', '\n']).len()..];
+        *line = format!("{}{newlines}", patch.content.trim_end_matches(['\r', '\n']));
+        Ok(())
+    }
+
+    fn finish(self) -> orfail::Result<()> {
+        let content = self.lines.join("");
+        std::fs::write(&self.path, content)
+            .or_fail_with(|e| format!("failed to write file {}: {e}", self.path.display()))?;
+        Ok(())
     }
 }
 
