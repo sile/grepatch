@@ -1,4 +1,9 @@
-use std::{io::BufRead, num::NonZeroUsize, path::Path};
+use std::{
+    fs::File,
+    io::BufRead,
+    num::NonZeroUsize,
+    path::{Path, PathBuf},
+};
 
 use orfail::OrFail;
 
@@ -27,15 +32,41 @@ fn main() -> noargs::Result<()> {
 fn run() -> orfail::Result<()> {
     let stdin = std::io::stdin();
     let mut lines = stdin.lock().lines();
-    while let Some(line) = lines.next().transpose().or_fail()? {
+
+    let Some(first_line) = lines.next().transpose().or_fail()? else {
+        return Ok(());
+    };
+
+    let patch = LinePatch::new(&first_line).or_fail()?;
+    let mut patcher = FilePatcher::open(patch.file).or_fail()?;
+
+    for line in std::iter::once(Ok(first_line)).chain(lines) {
+        let line = line.or_fail()?;
         let patch = LinePatch::new(&line).or_fail()?;
+        patcher.apply(&patch).or_fail()?;
     }
     Ok(())
 }
 
 #[derive(Debug)]
 struct FilePatcher {
-    //
+    path: PathBuf,
+    file: File,
+}
+
+impl FilePatcher {
+    fn open(path: &Path) -> orfail::Result<Self> {
+        let file = File::open(path)
+            .or_fail_with(|e| format!("failed to open file {}: {e}", path.display()))?;
+        Ok(Self {
+            path: path.to_path_buf(),
+            file,
+        })
+    }
+
+    fn apply(&mut self, patch: &LinePatch) -> orfail::Result<()> {
+        todo!()
+    }
 }
 
 // [FORMAT] FILE_PATH:LINE_NUMBER:NEW_LINE_CONTENT
