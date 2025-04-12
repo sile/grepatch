@@ -1,6 +1,7 @@
 use std::{
+    collections::HashMap,
     fs::File,
-    io::BufRead,
+    io::{BufRead, BufReader},
     num::NonZeroUsize,
     path::{Path, PathBuf},
 };
@@ -38,11 +39,14 @@ fn run() -> orfail::Result<()> {
     };
 
     let patch = LinePatch::new(&first_line).or_fail()?;
-    let mut patcher = FilePatcher::open(patch.file).or_fail()?;
+    let mut patcher = FilePatcher::open(patch.file_path).or_fail()?;
 
     for line in std::iter::once(Ok(first_line)).chain(lines) {
         let line = line.or_fail()?;
         let patch = LinePatch::new(&line).or_fail()?;
+        if patcher.path != patch.file_path {
+            patcher = FilePatcher::open(patch.file_path).or_fail()?;
+        }
         patcher.apply(&patch).or_fail()?;
     }
     Ok(())
@@ -52,16 +56,40 @@ fn run() -> orfail::Result<()> {
 struct FilePatcher {
     path: PathBuf,
     file: File,
+    index: HashMap<NonZeroUsize, usize>,
 }
 
 impl FilePatcher {
     fn open(path: &Path) -> orfail::Result<Self> {
         let file = File::open(path)
             .or_fail_with(|e| format!("failed to open file {}: {e}", path.display()))?;
-        Ok(Self {
+        let mut this = Self {
             path: path.to_path_buf(),
             file,
-        })
+            index: HashMap::new(),
+        };
+        this.build_index().or_fail()?;
+        Ok(this)
+    }
+
+    fn build_index(&mut self) -> orfail::Result<()> {
+        let mut i = 0;
+        let mut position = 0;
+        let mut reader = BufReader::new(&mut self.file);
+        let mut buf = String::new();
+        loop {
+            let bytes_read = reader.read_line(&mut buf).or_fail()?;
+            if bytes_read == 0 {
+                break;
+            }
+
+            self.index
+                .insert(NonZeroUsize::MIN.saturating_add(i), position);
+            i += 1;
+            position += bytes_read;
+            buf.clear();
+        }
+        Ok(())
     }
 
     fn apply(&mut self, patch: &LinePatch) -> orfail::Result<()> {
@@ -72,7 +100,7 @@ impl FilePatcher {
 // [FORMAT] FILE_PATH:LINE_NUMBER:NEW_LINE_CONTENT
 #[derive(Debug)]
 struct LinePatch<'a> {
-    file: &'a Path,
+    file_path: &'a Path,
     line_number: NonZeroUsize,
     content: &'a str,
 }
@@ -90,7 +118,7 @@ impl<'a> LinePatch<'a> {
             .or_fail_with(|e| format!("invalid line number: line={line:?}, reason={e}"))?;
 
         Ok(Self {
-            file: Path::new(file_path),
+            file_path: Path::new(file_path),
             line_number,
             content,
         })
