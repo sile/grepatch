@@ -3,7 +3,7 @@ use std::{
     io::{BufRead, BufReader, Seek, SeekFrom},
     num::NonZeroUsize,
     path::{Path, PathBuf},
-    process::Command,
+    process::{Command, Stdio},
 };
 
 use orfail::OrFail;
@@ -56,8 +56,10 @@ fn edit_and_run(editor: PathBuf) -> orfail::Result<()> {
     std::io::copy(&mut std::io::stdin().lock(), &mut temp)
         .or_fail_with(|e| format!("failed to read input: {e}"))?;
 
+    let tty_stdin = File::open("/dev/tty").map(Stdio::from);
     let status = Command::new(editor)
         .arg(temp.path())
+        .stdin(tty_stdin.unwrap_or(Stdio::inherit()))
         .status()
         .or_fail_with(|e| format!("failed to execute editor: {e}"))?;
     status
