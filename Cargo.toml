@@ -2,6 +2,13 @@
 name = "grepatch"
 version = "0.1.0"
 edition = "2024"
+authors = ["Takeru Ohta <phjgt308@gmail.com>"]
+license = "MIT"
+description = "A command-line patch tool that processes grep output to apply text replacements to files"
+homepage = "https://github.com/sile/grepatch"
+repository = "https://github.com/sile/grepatch"
+readme = "README.md"
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 noargs = "0.3.1"

@@ -23,6 +23,8 @@ Installation
 ```console
 $ cargo install grepatch
 $ grepatch -h
+A command-line patch tool that processes grep output to apply text replacements to files
+
 Usage: grepatch [OPTIONS]
 
 Options:
