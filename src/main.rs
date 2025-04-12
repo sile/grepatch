@@ -61,7 +61,7 @@ fn edit_and_run(editor: PathBuf) -> orfail::Result<()> {
         .or_fail_with(|e| format!("failed to execute editor: {e}"))?;
     status
         .success()
-        .or_fail_with(|_| format!("editor aborted"))?;
+        .or_fail_with(|_| "editor aborted".to_owned())?;
 
     temp.seek(SeekFrom::Start(0)).or_fail()?;
     run(BufReader::new(temp)).or_fail()?;
