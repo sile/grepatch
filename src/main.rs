@@ -1,8 +1,9 @@
 use std::{
     fs::File,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader, Seek, SeekFrom},
     num::NonZeroUsize,
     path::{Path, PathBuf},
+    process::Command,
 };
 
 use orfail::OrFail;
@@ -40,15 +41,36 @@ fn main() -> noargs::Result<()> {
         return Ok(());
     }
 
-    run(edit, editor).map_err(|e| e.message)?;
+    if edit {
+        edit_and_run(editor).map_err(|e| e.message)?;
+    } else {
+        let stdin = std::io::stdin();
+        run(stdin.lock()).map_err(|e| e.message)?;
+    }
 
     Ok(())
 }
 
-fn run(edit: bool, editor: PathBuf) -> orfail::Result<()> {
-    let stdin = std::io::stdin();
-    let mut lines = stdin.lock().lines();
+fn edit_and_run(editor: PathBuf) -> orfail::Result<()> {
+    let mut temp = tempfile::NamedTempFile::new().or_fail()?;
+    std::io::copy(&mut std::io::stdin().lock(), &mut temp)
+        .or_fail_with(|e| format!("failed to read input: {e}"))?;
 
+    let status = Command::new(editor)
+        .arg(temp.path())
+        .status()
+        .or_fail_with(|e| format!("failed to execute editor: {e}"))?;
+    status
+        .success()
+        .or_fail_with(|_| format!("editor aborted"))?;
+
+    temp.seek(SeekFrom::Start(0)).or_fail()?;
+    run(BufReader::new(temp)).or_fail()?;
+    Ok(())
+}
+
+fn run<R: BufRead>(input: R) -> orfail::Result<()> {
+    let mut lines = input.lines();
     let Some(first_line) = lines.next().transpose().or_fail()? else {
         return Ok(());
     };
