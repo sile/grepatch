@@ -3,7 +3,7 @@ grepatch
 
 `grepatch` is a global text replacement tool that processes output from `git grep -n` and applies changes from command line operations like `sed` or manual edits via text editors to modify files directly.
 
-Try it!: `$ git grep -n $QUERY | sed s/$FROM/$TO/g | grepatch`
+Try it!: `$ git grep -n $QUERY | grepatch --edit`
 
 Features
 ---------
