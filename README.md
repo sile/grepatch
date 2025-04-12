@@ -11,10 +11,10 @@ Quick Start
 -----------
 
 ```console
-# Replace text using sed
+// Replace text using sed
 $ git grep -n "old_text" | sed 's/old_text/new_text/g' | grepatch
 
-# Edit matches manually in your preferred editor
+// Edit matches manually in your preferred editor
 $ git grep -n "function_name" | grepatch --edit
 ```
 
