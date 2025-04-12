@@ -19,17 +19,33 @@ fn main() -> noargs::Result<()> {
     }
     noargs::HELP_FLAG.take_help(&mut args);
 
+    let edit = noargs::flag("edit")
+        .short('e')
+        .doc("Edit the input patch before applying it to allow manual modifications")
+        .take(&mut args)
+        .is_present();
+    let editor: PathBuf = if edit || args.metadata().help_mode {
+        noargs::opt("editor")
+            .ty("PATH")
+            .env("EDITOR")
+            .doc("Specify which editor to use when '--edit' is enabled")
+            .take(&mut args)
+            .then(|a| a.value().parse())?
+    } else {
+        PathBuf::from("not_used")
+    };
+
     if let Some(help) = args.finish()? {
         print!("{help}");
         return Ok(());
     }
 
-    run().map_err(|e| e.message)?;
+    run(edit, editor).map_err(|e| e.message)?;
 
     Ok(())
 }
 
-fn run() -> orfail::Result<()> {
+fn run(edit: bool, editor: PathBuf) -> orfail::Result<()> {
     let stdin = std::io::stdin();
     let mut lines = stdin.lock().lines();
 

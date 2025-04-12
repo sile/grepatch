@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 noargs = "0.3.1"
 orfail = "1.1.0"
+tempfile = "3.19.1"
