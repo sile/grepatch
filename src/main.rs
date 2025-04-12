@@ -98,6 +98,10 @@ impl FilePatcher {
                     patch.line_number
                 )
             })?;
+        if line.trim_end_matches(['\r', '\n']) == patch.content.trim_end_matches(['\r', '\n']) {
+            return Ok(());
+        }
+
         let newlines = &line[line.trim_end_matches(['\r', '\n']).len()..];
         *line = format!("{}{newlines}", patch.content.trim_end_matches(['\r', '\n']));
         self.applied_count += 1;
