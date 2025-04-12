@@ -17,6 +17,14 @@ Installation
 
 ```console
 $ cargo install grepatch
+$ grepatch -h
+Usage: grepatch [OPTIONS]
+
+Options:
+      --version       Print version
+  -h, --help          Print help ('--help' for full help, '-h' for summary)
+  -e, --edit          Edit the input patch before applying it to allow manual modifications
+      --editor <PATH> Specify which editor to use when '--edit' is enabled [env: EDITOR]
 ```
 
 Examples
